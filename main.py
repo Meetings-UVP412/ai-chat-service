@@ -87,15 +87,15 @@ def process_chunk_event(channel, event: ChunkProcessedEvent):
         logger.warning(f"Текст встречи: {full_text}")
 
         if not full_text or len(full_text.strip()) < 1:
-            logger.warning(f"Текст встречи {event.uuid} пустой")
+            logger.warning(f"Текст встречи {event.uuid} пустой!")
             logging.warning(full_text)
-            publish_summary_result(channel, event.uuid, "Текст встречи пустой", False)
+            publish_summary_result(channel, event.uuid, "Текст встречи пустой!", False)
             return
 
         # Суммаризация
         summary = deepseek_client.summarize(full_text, event.uuid)
 
-        # Сохраняем в main-service
+        # Сохраняем в postgres
         if meetings_client.save_summary(event.uuid, summary):
             publish_summary_result(channel, event.uuid, summary, True)
             logger.info(f"Суммаризация завершена для встречи {event.uuid}")
@@ -169,10 +169,6 @@ def main():
     logger.info("Запуск AI Chat Service")
     logger.info("="*70)
 
-    if not Config.DEEPSEEK_API_KEY:
-        logger.critical("DEEPSEEK_API_KEY не установлен в .env файле!")
-        sys.exit(1)
-
     meetings_client = MeetingsClient(Config.MEETINGS_API_URL)
     deepseek_client = DeepSeekClient(Config.DEEPSEEK_API_KEY)
 
@@ -184,7 +180,6 @@ def main():
         channel.basic_consume(queue=Config.QUEUE_NAME, on_message_callback=callback)
 
         logger.info("\nСервис готов к обработке сообщений")
-        logger.info(f"   Очередь: {Config.QUEUE_NAME}")
         logger.info(f"   Слушает: {Config.CHUNK_PROCESSED_ROUTING_KEY}")
         logger.info(f"   Публикует: {Config.SUMMARY_ROUTING_KEY}")
         logger.info("="*70)
@@ -199,7 +194,7 @@ def main():
     finally:
         if rabbit_connection and rabbit_connection.is_open:
             rabbit_connection.close()
-            logger.info("Соединение с RabbitMQ закрыто")
+            logger.info("Соединение с RabbitMQ закрыто!")
 
 
 if __name__ == "__main__":

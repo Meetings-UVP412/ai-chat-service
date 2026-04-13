@@ -15,7 +15,7 @@ class MeetingsClient:
 
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=5))
     def get_full_meeting_text(self, uuid: str) -> str:
-        url = f"{self.api_base_url}/api/meetings/meetingResult/{uuid}"
+        url = f"{self.api_base_url}/internal/meetingResult/{uuid}"
         try:
             logger.info(f"Запрос полного текста встречи: {url}")
             response = self.session.get(url, timeout=15)
@@ -38,18 +38,3 @@ class MeetingsClient:
         logger.info(f"meeting: {uuid}, summary: {summary}")
         return True
 
-        # url = f"{self.api_base_url}/api/meetings/{uuid}/summary"
-        # try:
-        #     logger.info(f"Отправка суммаризации в API для {uuid}")
-        #     response = self.session.put(
-        #         url,
-        #         data=summary.encode('utf-8'),
-        #         headers={'Content-Type': 'text/plain; charset=utf-8'},
-        #         timeout=10
-        #     )
-        #     response.raise_for_status()
-        #     logger.info(f"Суммаризация успешно сохранена для встречи {uuid}")
-        #     return True
-        # except Exception as e:
-        #     logger.exception(f"Ошибка при сохранении суммаризации: {e}")
-        #     return False
