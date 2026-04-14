@@ -33,16 +33,16 @@ class SummarizeService:
 
             if not full_text or len(full_text.strip()) < 1:
                 logger.warning(f"Транскрипция встречи {event.uuid} пустая!")
-                publish_summary_result(channel, event.uuid, "Транскрипция встречи пустая!", False)
+                publish_summary_result(channel, event.uuid, "Транскрипция встречи пустая!", False, event.ord)
                 return
 
             summary = self.deepseek_client.summarize(full_text, event.uuid)
-            publish_summary_result(channel, event.uuid, summary, True)
+            publish_summary_result(channel, event.uuid, summary, True, event.ord)
             logger.info(f"Суммаризация завершена для встречи: {event.uuid}")
 
         except Exception as e:
             logger.exception(f"Критическая ошибка при обработке встречи {event.uuid}: {e}")
-            publish_summary_result(channel, event.uuid, f"Ошибка суммаризации: {str(e)}", False)
+            publish_summary_result(channel, event.uuid, f"Ошибка суммаризации: {str(e)}", False, event.ord)
 
     def callback(self, ch, method, properties, body):
         if get_shutdown_flag():

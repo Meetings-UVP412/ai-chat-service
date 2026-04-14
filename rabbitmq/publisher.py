@@ -4,9 +4,10 @@ from datetime import datetime
 from config import Config
 
 
-def publish_summary_result(channel, uuid: str, summary: str, success: bool):
+def publish_summary_result(channel, uuid: str, summary: str, success: bool, ord: int):
     result = {
         "uuid": uuid,
+        "ord": ord,
         "summary": summary if success else "",
         "success": success,
         "timestamp": datetime.now().isoformat()
