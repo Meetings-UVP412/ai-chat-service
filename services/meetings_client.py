@@ -37,4 +37,3 @@ class MeetingsClient:
     def save_summary(self, uuid: str, summary: str) -> bool:
         logger.info(f"meeting: {uuid}, summary: {summary}")
         return True
-
