@@ -82,26 +82,22 @@ def process_chunk_event(channel, event: ChunkProcessedEvent):
         return
 
     try:
-        # Получаем полный текст встречи из redis
+        # Получаем полную транскрипцию встречи из redis
         full_text = meetings_client.get_full_meeting_text(event.uuid)
-        logger.warning(f"Текст встречи: {full_text}")
+        logger.warning(f"Транскрипция встречи: {full_text}")
 
         if not full_text or len(full_text.strip()) < 1:
-            logger.warning(f"Текст встречи {event.uuid} пустой!")
+            logger.warning(f"Транскрипция встречи {event.uuid} пустая!")
             logging.warning(full_text)
-            publish_summary_result(channel, event.uuid, "Текст встречи пустой!", False)
+            publish_summary_result(channel, event.uuid, "Транскрипция встречи пустая!", False)
             return
 
         # Суммаризация
         summary = deepseek_client.summarize(full_text, event.uuid)
 
-        # Сохраняем в postgres
-        if meetings_client.save_summary(event.uuid, summary):
-            publish_summary_result(channel, event.uuid, summary, True)
-            logger.info(f"Суммаризация завершена для встречи {event.uuid}")
-        else:
-            logger.error(f"Не удалось сохранить суммаризацию для {event.uuid}")
-            publish_summary_result(channel, event.uuid, "Ошибка сохранения суммаризации", False)
+        # Публикуем событие о завершении суммаризации
+        publish_summary_result(channel, event.uuid, summary, True)
+        logger.info(f"Суммаризация завершена для встречи: {event.uuid}")
 
     except Exception as e:
         logger.exception(f"Критическая ошибка при обработке встречи {event.uuid}: {e}")

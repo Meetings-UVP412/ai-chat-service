@@ -17,11 +17,11 @@ class MeetingsClient:
     def get_full_meeting_text(self, uuid: str) -> str:
         url = f"{self.api_base_url}/internal/meetingResult/{uuid}"
         try:
-            logger.info(f"Запрос полного текста встречи: {url}")
+            logger.info(f"Запрос транскрипции встречи: {url}")
             response = self.session.get(url, timeout=15)
             response.raise_for_status()
             text = response.text.strip()
-            logger.info(f"Получен текст встречи {uuid}")
+            logger.info(f"Получена транскрипция встречи: {uuid}")
             return text
         except requests.exceptions.HTTPError as e:
             if response.status_code == 404:
