@@ -1,5 +1,6 @@
 import requests
 import logging
+import json
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 from config import Config
 
@@ -22,8 +23,73 @@ class DeepSeekClient:
         wait=wait_exponential(multiplier=1, min=2, max=10),
         retry=retry_if_exception_type((requests.exceptions.Timeout, requests.exceptions.ConnectionError))
     )
+    def generate_response(self, messages: list, temperature: float = 0.3, max_tokens: int = 1000) -> str:
+        payload = {
+            "model": "deepseek-chat",
+            "messages": messages,
+            "temperature": temperature,
+            "max_tokens": max_tokens
+        }
+
+        try:
+            response = self.session.post(
+                self.base_url,
+                json=payload,
+                timeout=60
+            )
+            response.raise_for_status()
+
+            result = response.json()
+            content = result['choices'][0]['message']['content'].strip()
+            return content
+
+        except Exception as e:
+            logger.exception(f"Ошибка при генерации ответа: {e}")
+            raise
+
+    def stream_response(self, messages: list, temperature: float = 0.3, max_tokens: int = 1000):
+        payload = {
+            "model": "deepseek-chat",
+            "messages": messages,
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+            "stream": True
+        }
+
+        try:
+            response = self.session.post(
+                self.base_url,
+                json=payload,
+                timeout=60,
+                stream=True
+            )
+            response.raise_for_status()
+
+            full_response = ""
+            for line in response.iter_lines():
+                if line:
+                    decoded_line = line.decode('utf-8')
+                    if decoded_line.startswith("data: "):
+                        chunk_data = decoded_line[6:]
+                        if chunk_data.strip() == "[DONE]":
+                            break
+                        try:
+                            data = json.loads(chunk_data)
+                            delta = data["choices"][0]["delta"]
+                            content = delta.get("content", "")
+                            if content:
+                                full_response += content
+                                yield content
+                        except (KeyError, json.JSONDecodeError):
+                            continue
+
+            return full_response
+
+        except Exception as e:
+            logger.exception(f"Ошибка при стриминге: {e}")
+            raise
+
     def summarize(self, full_text: str, meeting_uuid: str) -> str:
-        """Создаёт суммаризацию текста встречи"""
         truncated_text = full_text[:12000] if len(full_text) > 12000 else full_text
 
         prompt = f"""Ты — профессиональный ассистент для анализа встреч.
@@ -39,35 +105,9 @@ class DeepSeekClient:
 {truncated_text}
 """
 
-        payload = {
-            "model": "deepseek-chat",
-            "messages": [
-                {"role": "system", "content": "Ты — полезный ассистент для суммаризации деловых встреч."},
-                {"role": "user", "content": prompt}
-            ],
-            "temperature": 0.3,
-            "max_tokens": 1000
-        }
+        messages = [
+            {"role": "system", "content": "Ты — полезный ассистент для суммаризации деловых встреч."},
+            {"role": "user", "content": prompt}
+        ]
 
-        try:
-            logger.info(f"Отправка запроса к DeepSeek для встречи {meeting_uuid}")
-            response = self.session.post(
-                self.base_url,
-                json=payload,
-                timeout=60
-            )
-            response.raise_for_status()
-
-            result = response.json()
-            summary = result['choices'][0]['message']['content'].strip()
-            logger.info(f"Суммаризация получена для встречи {meeting_uuid}")
-            return summary
-
-        except requests.exceptions.HTTPError as e:
-            if response.status_code == 429:
-                logger.warning(f"rate limit превышен для {meeting_uuid}")
-            elif response.status_code == 401:
-                logger.error("Неверный API ключ DeepSeek!")
-                logger.error(f"DeepSeek API error ({response.status_code}): {response.text[:300]}")
-        except Exception as e:
-            logger.exception(f"Ошибка при суммаризации через DeepSeek: {e}")
+        return self.generate_response(messages, temperature=0.3, max_tokens=1000)

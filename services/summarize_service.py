@@ -6,6 +6,7 @@ from rabbitmq.connection import connect_rabbitmq, declare_queue
 from rabbitmq.publisher import publish_summary_result
 from utils.signal_handler import get_shutdown_flag
 from config import Config
+from chat_service import ChatService
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +30,7 @@ class SummarizeService:
 
         try:
             full_text = self.meetings_client.get_full_meeting_text(event.uuid)
-            logger.warning(f"Транскрипция встречи: {full_text}")
+            logger.info(f"Длина транскрипции: {len(full_text)} символов")
 
             if not full_text or len(full_text.strip()) < 1:
                 logger.warning(f"Транскрипция встречи {event.uuid} пустая!")
@@ -39,6 +40,9 @@ class SummarizeService:
             summary = self.deepseek_client.summarize(full_text, event.uuid)
             publish_summary_result(channel, event.uuid, summary, True, event.ord)
             logger.info(f"Суммаризация завершена для встречи: {event.uuid}")
+
+            chat_service = ChatService(self.meetings_client, self.deepseek_client)
+            chat_service.create_chats_after_summarization(event.uuid, summary)
 
         except Exception as e:
             logger.exception(f"Критическая ошибка при обработке встречи {event.uuid}: {e}")
