@@ -34,11 +34,6 @@ class MeetingsClient:
             raise
 
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=5))
-    def save_summary(self, uuid: str, summary: str) -> bool:
-        logger.info(f"meeting: {uuid}, summary: {summary}")
-        return True
-
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=5))
     def create_chat(self, chat_data: dict) -> bool:
         url = f"{self.api_base_url}/chats/create"
         try:
@@ -51,13 +46,14 @@ class MeetingsClient:
             raise
 
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=5))
-    def get_chat_messages(self, chat_id: str) -> list:
+    def get_chat(self, chat_id: str) -> list:
         url = f"{self.api_base_url}/chats/history/{chat_id}"
         try:
             response = self.session.get(url, timeout=15)
             response.raise_for_status()
             chat_data = response.json()
-            return chat_data.get('messages', [])
+            #return chat_data.get('messages', [])
+            return chat_data
         except Exception as e:
             logger.exception(f"Ошибка при получении сообщений чата {chat_id}: {e}")
             raise

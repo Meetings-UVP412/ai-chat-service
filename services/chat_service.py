@@ -20,6 +20,7 @@ class ChatService:
                 ]
 
                 response = self.deepseek_client.generate_response(messages)
+                logger.info(f"DEEPSEEK RESPONSE {response}")
 
                 chat_data = {
                     "meetingUUID": meeting_uuid,
@@ -38,14 +39,21 @@ class ChatService:
 
     def stream_chat_response(self, chat_id: str, user_message: dict):
         try:
-            current_messages = self.meetings_client.get_chat_messages(chat_id)
-            messages = [{"role": "system", "content": DEFAULT_PROMPT}]
+            chat_info = self.meetings_client.get_chat(chat_id)
+            current_messages = chat_info.get('messages', [])
+            meeting_uuid = chat_info.get('meetingUUID', '')
+
+            transcription = "Транскрипция встречи: " + self.meetings_client.get_full_meeting_text(meeting_uuid)
+            logger.info(f"GOT TRANSCRIPTION FOR STREAM RESPONSE: {transcription}")
+
+            messages = [{"role": "system", "content": DEFAULT_PROMPT + transcription}]
             messages.extend(current_messages)
             messages.append(user_message)
 
             full_response = ""
             for token in self.deepseek_client.stream_response(messages):
                 full_response += token
+                logger.info(token)
                 yield f"data: {token}\n\n"
 
             # убираем системный промпт
