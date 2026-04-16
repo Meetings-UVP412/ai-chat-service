@@ -5,9 +5,6 @@ from fastapi.responses import StreamingResponse
 from services.chat_service import ChatService
 from services.meetings_client import MeetingsClient
 from services.deepseek_client import DeepSeekClient
-from services.summarize_service import SummarizeService
-from utils.signal_handler import setup_signal_handlers
-
 
 logging.basicConfig(
     level=logging.INFO,
@@ -43,16 +40,6 @@ async def stream_chat_response(chat_id: str, request: Request):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-def main():
-    logger.info("="*70)
-    logger.info("Запуск AI Chat Service")
-    logger.info("="*70)
-
-    setup_signal_handlers()
-
-    service = SummarizeService(meetings_client, deepseek_client)
-    service.start()
-
-
 if __name__ == "__main__":
-    main()
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

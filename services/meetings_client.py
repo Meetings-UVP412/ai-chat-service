@@ -52,7 +52,7 @@ class MeetingsClient:
 
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=5))
     def get_chat_messages(self, chat_id: str) -> list:
-        url = f"{self.api_base_url}/chats/{chat_id}"
+        url = f"{self.api_base_url}/chats/history/{chat_id}"
         try:
             response = self.session.get(url, timeout=15)
             response.raise_for_status()
@@ -64,7 +64,7 @@ class MeetingsClient:
 
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=5))
     def update_chat_messages(self, chat_id: str, messages: list) -> bool:
-        url = f"{self.api_base_url}/chats/{chat_id}/messages"
+        url = f"{self.api_base_url}/chats/{chat_id}/update-messages"
         try:
             response = self.session.post(
                 url,

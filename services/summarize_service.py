@@ -6,7 +6,7 @@ from rabbitmq.connection import connect_rabbitmq, declare_queue
 from rabbitmq.publisher import publish_summary_result
 from utils.signal_handler import get_shutdown_flag
 from config import Config
-from chat_service import ChatService
+from services.chat_service import ChatService
 
 logger = logging.getLogger(__name__)
 
