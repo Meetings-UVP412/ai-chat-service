@@ -1,4 +1,5 @@
 import logging
+from .instructions import INSTRUCTIONS, DEFAULT_PROMPT
 
 logger = logging.getLogger(__name__)
 
@@ -8,20 +9,13 @@ class ChatService:
         self.meetings_client = meetings_client
         self.deepseek_client = deepseek_client
 
-    def create_chats_after_summarization(self, meeting_uuid: str, summary: str):
-        instructions = [
-            ("Краткое резюме", "Создай краткое резюме встречи на 3-5 предложений."),
-            ("Задачи и действия", "Выдели список задач и действий с ответственными лицами."),
-            ("Принятые решения", "Перечисли все принятые решения на встрече."),
-            ("Риски и проблемы", "Опиши риски и проблемы, о которых говорили на встрече."),
-            ("Следующие шаги", "Сформулируй следующие шаги и действия после встречи.")
-        ]
+    def create_chats_after_summarization(self, meeting_uuid: str, transcription: str):
 
-        for title, instruction in instructions:
+        for title, instruction in INSTRUCTIONS:
             try:
-                prompt = f"{instruction}\n\nСуммаризация встречи:\n{summary}"
+                prompt = f"{instruction}\n\nТранскрипция встречи:\n{transcription}"
                 messages = [
-                    {"role": "system", "content": "Ты — полезный ассистент."},
+                    {"role": "system", "content": DEFAULT_PROMPT},
                     {"role": "user", "content": prompt}
                 ]
 
@@ -45,14 +39,17 @@ class ChatService:
     def stream_chat_response(self, chat_id: str, user_message: dict):
         try:
             current_messages = self.meetings_client.get_chat_messages(chat_id)
-            new_messages = current_messages + [user_message]
+            messages = [{"role": "system", "content": DEFAULT_PROMPT}]
+            messages.extend(current_messages)
+            messages.append(user_message)
 
             full_response = ""
-            for token in self.deepseek_client.stream_response(new_messages):
+            for token in self.deepseek_client.stream_response(messages):
                 full_response += token
                 yield f"data: {token}\n\n"
 
-            updated_messages = new_messages + [{"role": "assistant", "content": full_response}]
+            # убираем системный промпт
+            updated_messages = messages[1:] + [{"role": "assistant", "content": full_response}]
             self.meetings_client.update_chat_messages(chat_id, updated_messages)
 
         except Exception as e:

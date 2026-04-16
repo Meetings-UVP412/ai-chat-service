@@ -37,12 +37,11 @@ class SummarizeService:
                 publish_summary_result(channel, event.uuid, "Транскрипция встречи пустая!", False, event.ord)
                 return
 
-            summary = self.deepseek_client.summarize(full_text, event.uuid)
-            publish_summary_result(channel, event.uuid, summary, True, event.ord)
-            logger.info(f"Суммаризация завершена для встречи: {event.uuid}")
-
             chat_service = ChatService(self.meetings_client, self.deepseek_client)
-            chat_service.create_chats_after_summarization(event.uuid, summary)
+            chat_service.create_chats_after_summarization(event.uuid, full_text)
+
+            publish_summary_result(channel, event.uuid, "Summarization has been completed!", True, event.ord)
+            logger.info(f"Суммаризация завершена для встречи: {event.uuid}")
 
         except Exception as e:
             logger.exception(f"Критическая ошибка при обработке встречи {event.uuid}: {e}")

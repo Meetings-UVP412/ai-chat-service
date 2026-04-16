@@ -88,26 +88,3 @@ class DeepSeekClient:
         except Exception as e:
             logger.exception(f"Ошибка при стриминге: {e}")
             raise
-
-    def summarize(self, full_text: str, meeting_uuid: str) -> str:
-        truncated_text = full_text[:12000] if len(full_text) > 12000 else full_text
-
-        prompt = f"""Ты — профессиональный ассистент для анализа встреч.
-Проанализируй текст встречи и создай структурированную суммаризацию на русском языке.
-
-Требования:
-1. Выдели 3-5 ключевых тем обсуждения
-2. Перечисли принятые решения (если есть)
-3. Укажи задачи/действия с ответственными (если упомянуты)
-4. Сохрани деловой стиль, без "воды"
-
-Текст встречи:
-{truncated_text}
-"""
-
-        messages = [
-            {"role": "system", "content": "Ты — полезный ассистент для суммаризации деловых встреч."},
-            {"role": "user", "content": prompt}
-        ]
-
-        return self.generate_response(messages, temperature=0.3, max_tokens=1000)
