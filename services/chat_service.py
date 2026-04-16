@@ -45,17 +45,16 @@ class ChatService:
     def stream_chat_response(self, chat_id: str, user_message: dict):
         try:
             current_messages = self.meetings_client.get_chat_messages(chat_id)
-
             new_messages = current_messages + [user_message]
 
             full_response = ""
             for token in self.deepseek_client.stream_response(new_messages):
                 full_response += token
-                yield token
+                yield f"data: {token}\n\n"
 
             updated_messages = new_messages + [{"role": "assistant", "content": full_response}]
             self.meetings_client.update_chat_messages(chat_id, updated_messages)
 
         except Exception as e:
             logger.exception(f"Ошибка при стриминге чата {chat_id}: {e}")
-            yield f"Ошибка: {str(e)}"
+            yield f"data: Ошибка: {str(e)}\n\n"
