@@ -1,5 +1,9 @@
-import logging
 from config import Config
+from dotenv import load_dotenv
+
+load_dotenv()
+
+import logging
 from services.meetings_client import MeetingsClient
 from services.deepseek_client import DeepSeekClient
 from services.summarize_service import SummarizeService

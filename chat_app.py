@@ -1,5 +1,10 @@
-import logging
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from config import Config
+import logging
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import StreamingResponse
 from services.chat_service import ChatService
@@ -42,4 +47,5 @@ async def stream_chat_response(chat_id: str, request: Request):
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8000)

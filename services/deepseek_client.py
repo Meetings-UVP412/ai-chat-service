@@ -31,15 +31,28 @@ class DeepSeekClient:
             "max_tokens": max_tokens
         }
 
+        logger.info(f"PAYLOAD: {payload}")
+
         try:
             response = self.session.post(
                 self.base_url,
                 json=payload,
-                timeout=120
+                timeout=600
             )
             response.raise_for_status()
 
             result = response.json()
+            logger.info(f"DEEPSEEK RESULT: {result}")
+
+            if "error" in result:
+                error_msg = result["error"]
+                logger.error(f"DeepSeek API error: {error_msg}")
+                raise RuntimeError(f"DeepSeek API returned error: {error_msg}")
+
+            if "choices" not in result:
+                logger.error(f"Unexpected response format, no 'choices' key. Full response: {result}")
+                raise ValueError("Invalid API response: missing 'choices'")
+
             content = result['choices'][0]['message']['content'].strip()
             return content
 
@@ -60,7 +73,7 @@ class DeepSeekClient:
             response = self.session.post(
                 self.base_url,
                 json=payload,
-                timeout=120,
+                timeout=600,
                 stream=True
             )
             response.raise_for_status()

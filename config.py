@@ -3,6 +3,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+DEEPSEEK_API_KEY_RAW = os.getenv('DEEPSEEK_API_KEY')
+print(f"[DEBUG] DEEPSEEK_API_KEY loaded: {bool(DEEPSEEK_API_KEY_RAW)}")
+print(f"[DEBUG] Key length: {len(DEEPSEEK_API_KEY_RAW) if DEEPSEEK_API_KEY_RAW else 0}")
+
 
 class Config:
     RABBITMQ_HOST = os.getenv('RABBITMQ_HOST', 'localhost')
