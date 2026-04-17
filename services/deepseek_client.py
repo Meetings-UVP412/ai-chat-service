@@ -35,7 +35,7 @@ class DeepSeekClient:
             response = self.session.post(
                 self.base_url,
                 json=payload,
-                timeout=60
+                timeout=120
             )
             response.raise_for_status()
 
@@ -60,7 +60,7 @@ class DeepSeekClient:
             response = self.session.post(
                 self.base_url,
                 json=payload,
-                timeout=60,
+                timeout=120,
                 stream=True
             )
             response.raise_for_status()

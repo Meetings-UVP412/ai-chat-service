@@ -52,7 +52,6 @@ class MeetingsClient:
             response = self.session.get(url, timeout=15)
             response.raise_for_status()
             chat_data = response.json()
-            #return chat_data.get('messages', [])
             return chat_data
         except Exception as e:
             logger.exception(f"Ошибка при получении сообщений чата {chat_id}: {e}")
